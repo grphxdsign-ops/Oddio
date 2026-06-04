@@ -35,7 +35,9 @@ describe('OddioAI source-reference tutor', () => {
     await element(by.id('instrument-piano')).tap();
     await element(by.id('song-search-input')).replaceText('very specific oddio search');
 
-    await expect(element(by.id('selected-arrangement-title'))).toHaveText('very specific oddio search');
+    await waitFor(element(by.id('selected-arrangement-title')))
+      .toHaveText('very specific oddio search')
+      .withTimeout(2000);
     await expect(element(by.id('license-status'))).toHaveText('reference-only');
     await expect(element(by.id('source-reference-panel'))).toBeVisible();
   });

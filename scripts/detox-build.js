@@ -26,6 +26,8 @@ if (platform === 'ios') {
     'Debug',
     '-sdk',
     'iphonesimulator',
+    '-destination',
+    'generic/platform=iOS Simulator',
     '-derivedDataPath',
     'ios/build',
   ]);

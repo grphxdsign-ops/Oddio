@@ -29,8 +29,9 @@ export function simulatePerformanceAttempt({
   });
   const pitchPenalty = wrongNotes.length * (inputMode === 'midi' ? 0.08 : 0.12) + missedNotes.length * 0.1;
   const rhythmPenalty = average(timingOffsets.map((offset) => Math.abs(offset))) / (inputMode === 'midi' ? 260 : 210);
-  const pitchScore = clamp(0.48, 0.99, 0.97 - pitchPenalty + runIndex * 0.015);
-  const rhythmScore = clamp(0.42, 0.99, 0.94 - rhythmPenalty + runIndex * 0.012);
+  const improvementBonus = Math.min(runIndex - 1, 5);
+  const pitchScore = clamp(0.48, 0.99, 0.97 - pitchPenalty + improvementBonus * 0.015);
+  const rhythmScore = clamp(0.42, 0.99, 0.94 - rhythmPenalty + improvementBonus * 0.012);
 
   return {
     id: `attempt-${Date.now()}-${runIndex}`,

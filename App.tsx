@@ -8,11 +8,11 @@ import {
 } from 'expo-audio';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Alert,
   Linking,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -99,10 +99,12 @@ export default function App() {
         }
 
         setMicReady(Boolean(status.granted));
-        await setAudioModeAsync({
-          allowsRecording: true,
-          playsInSilentMode: true,
-        });
+        if (status.granted) {
+          await setAudioModeAsync({
+            allowsRecording: true,
+            playsInSilentMode: true,
+          });
+        }
       } catch {
         if (isMounted) {
           setMicReady(false);
@@ -134,14 +136,25 @@ export default function App() {
 
   useEffect(() => {
     const firstPlayable = visibleResults[0] ?? null;
+    const selectionStillVisible =
+      selectedArrangement &&
+      visibleResults.some((arrangement) => arrangement.id === selectedArrangement.id);
 
-    if (!selectedArrangement || selectedArrangement.instrument !== instrument) {
+    if (!selectionStillVisible || selectedArrangement.instrument !== instrument) {
       setSelectedArrangement(firstPlayable);
       setActiveMeasure(1);
       setLastAttempt(null);
       setCoachResponse(null);
     }
   }, [instrument, selectedArrangement, visibleResults]);
+
+  useEffect(() => {
+    if (inputMode !== 'mic' && recorderState.isRecording) {
+      recorder.stop().catch(() => {
+        setMicReady(false);
+      });
+    }
+  }, [inputMode, recorder, recorderState.isRecording]);
 
   useEffect(() => {
     if (!isPlaying || !selectedArrangement) {
@@ -214,7 +227,7 @@ export default function App() {
       }
 
       await recorder.prepareToRecordAsync();
-      recorder.record();
+      await recorder.record();
     } catch {
       Alert.alert('Recording issue', 'The practice pass could not start on this device.');
     }

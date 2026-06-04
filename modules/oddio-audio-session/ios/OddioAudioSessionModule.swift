@@ -3,6 +3,8 @@ import CoreMIDI
 import ExpoModulesCore
 
 public class OddioAudioSessionModule: Module {
+  private lazy var midiAvailable: Bool = hasMidiClient()
+
   public func definition() -> ModuleDefinition {
     Name("OddioAudioSession")
 
@@ -27,7 +29,7 @@ public class OddioAudioSessionModule: Module {
       "available": true,
       "label": label,
       "platform": "ios",
-      "supportsMidi": hasMidiClient(),
+      "supportsMidi": midiAvailable,
       "supportsLowLatencyAudio": true
     ]
   }

@@ -1,7 +1,41 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-import type { Arrangement, InputMode, Instrument, SassLevel } from '../types/music';
+import type {
+  ArrangementFormat,
+  Difficulty,
+  InputMode,
+  Instrument,
+  LicenseStatus,
+  SassLevel,
+} from '../types/music';
+
+type ArrangementRow = {
+  id: string;
+  owner_id: string | null;
+  title: string;
+  artist: string;
+  instrument: Instrument;
+  format: ArrangementFormat;
+  difficulty: Difficulty;
+  bpm: number;
+  song_key: string;
+  source: string;
+  source_name: string;
+  license_status: LicenseStatus;
+  external_url: string;
+  reference_only: boolean;
+  rights_metadata: Record<string, unknown>;
+  tracks: Record<string, unknown>[];
+  measures: Record<string, unknown>[];
+  file_path: string | null;
+  created_at: string;
+};
+
+type ArrangementInsert = Omit<ArrangementRow, 'id' | 'created_at'> & {
+  id?: string;
+  created_at?: string;
+};
 
 type ExpoEnv = {
   process?: {
@@ -34,9 +68,9 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
       };
       arrangements: {
-        Row: Arrangement;
-        Insert: Arrangement;
-        Update: Partial<Arrangement>;
+        Row: ArrangementRow;
+        Insert: ArrangementInsert;
+        Update: Partial<ArrangementInsert>;
       };
       performance_attempts: {
         Row: {

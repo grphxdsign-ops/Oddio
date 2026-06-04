@@ -20,10 +20,11 @@ Requires macOS, Xcode, CocoaPods, and an installed iOS Simulator:
 
 ```bash
 npm run e2e:build:ios
+npm run e2e:metro
 npm run e2e:test:ios
 ```
 
-The iOS build script runs Expo prebuild, installs pods, and builds `OddioAI.app` for the simulator.
+The iOS build script runs Expo prebuild, installs pods, and builds `OddioAI.app` for the simulator. Keep the Metro command running in a second terminal while Detox launches the Expo development-client build. Without Metro, the app will stop at the dev-client bundler screen and the tests will time out.
 
 ### Android Emulator
 
@@ -34,8 +35,11 @@ By default, Detox targets `Pixel_7_API_35`. Override it when needed:
 ```bash
 set DETOX_ANDROID_AVD=Your_AVD_Name
 npm.cmd run e2e:build:android
+npm.cmd run e2e:metro
 npm.cmd run e2e:test:android
 ```
+
+Keep Metro running in a second terminal for Android too. The debug APK is an Expo development-client build and expects Metro to serve the JavaScript bundle.
 
 ## Current Detox Coverage
 

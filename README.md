@@ -26,7 +26,7 @@ npx.cmd expo install --check
 
 ## See The Prototype Run
 
-1. Open a terminal in `C:\Users\rickii\Documents\OddioAI`.
+1. Open a terminal in the cloned `OddioAI` project directory.
 2. Run `npm.cmd install` if dependencies are not already installed.
 3. Run `npm.cmd run start`.
 4. Open `http://localhost:8081` in a browser for the web preview, or scan the Expo QR code with Expo Go on a phone.

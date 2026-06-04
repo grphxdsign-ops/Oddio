@@ -37,6 +37,18 @@ const attempt = simulatePerformanceAttempt({
 assert.equal(attempt.rawAudioRetainedLocally, true, 'attempt should keep raw audio local by default');
 assert.equal(attempt.affectedMeasures.length > 0, true, 'attempt should identify affected focus areas');
 
+const longSessionAttempt = simulatePerformanceAttempt({
+  arrangement: guitarResults[0],
+  inputMode: 'midi',
+  runIndex: 40,
+  tempo: guitarResults[0].bpm,
+});
+assert.equal(
+  longSessionAttempt.wrongNotes.length > 0 && longSessionAttempt.pitchScore < 0.99,
+  true,
+  'long sessions should not hide simulated wrong notes behind an uncapped improvement bonus',
+);
+
 const request = buildTutorRequest({
   activeMeasure: 1,
   arrangement: guitarResults[0],
