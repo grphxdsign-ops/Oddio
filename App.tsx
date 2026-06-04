@@ -29,6 +29,7 @@ import {
 } from './src/services/contentProvider';
 import { simulatePerformanceAttempt } from './src/services/practiceAnalyzer';
 import { buildTutorRequest, buildTutorResponse } from './src/services/tutorEngine';
+import { getNativeAudioSessionStatus } from './src/native/OddioAudioSession';
 import type {
   Arrangement,
   InputMode,
@@ -77,6 +78,7 @@ export default function App() {
   const [coachResponse, setCoachResponse] = useState<TutorResponse | null>(null);
   const [recentProgress, setRecentProgress] = useState<PerformanceAttempt[]>([]);
   const [micReady, setMicReady] = useState(false);
+  const [nativeAudioStatus, setNativeAudioStatus] = useState('JS fallback');
 
   const recorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
@@ -86,6 +88,11 @@ export default function App() {
 
     const prepareMic = async () => {
       try {
+        const nativeStatus = await getNativeAudioSessionStatus();
+        if (isMounted) {
+          setNativeAudioStatus(nativeStatus.label);
+        }
+
         const status = await AudioModule.requestRecordingPermissionsAsync();
         if (!isMounted) {
           return;
@@ -218,12 +225,12 @@ export default function App() {
     : 0;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} testID="oddio-root">
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.brand}>OddioAI</Text>
+            <Text style={styles.brand} testID="brand-title">OddioAI</Text>
             <Text style={styles.headerMeta}>
               {instrument === 'guitar' ? 'Guitar lab' : 'Piano room'} / streak {learnerProfile.practiceStreak}
             </Text>
@@ -249,6 +256,7 @@ export default function App() {
               placeholder="Search a song or source reference"
               placeholderTextColor="#7B817F"
               style={styles.searchInput}
+              testID="song-search-input"
               value={query}
             />
           </View>
@@ -256,12 +264,18 @@ export default function App() {
             disabled={!selectedArrangement}
             onPress={() => selectedArrangement && Linking.openURL(selectedArrangement.externalUrl)}
             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+            testID="open-source-shortcut"
           >
             <Ionicons color="#F7F4EA" name="open-outline" size={20} />
           </Pressable>
         </View>
 
-        <SegmentedControl options={instrumentOptions} value={instrument} onChange={setInstrument} />
+        <SegmentedControl
+          options={instrumentOptions}
+          testIDPrefix="instrument"
+          value={instrument}
+          onChange={setInstrument}
+        />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.resultRail}>
           {visibleResults.map((arrangement) => (
@@ -280,16 +294,20 @@ export default function App() {
         </ScrollView>
 
         {selectedArrangement ? (
-          <View style={styles.practiceSurface}>
+          <View style={styles.practiceSurface} testID="practice-surface">
             <View style={styles.practiceHeader}>
               <View style={styles.practiceTitleBlock}>
-                <Text style={styles.practiceTitle}>{selectedArrangement.title}</Text>
+                <Text style={styles.practiceTitle} testID="selected-arrangement-title">
+                  {selectedArrangement.title}
+                </Text>
                 <Text style={styles.practiceSubtitle}>
                   {selectedArrangement.sourceName} / {selectedArrangement.key} / {selectedArrangement.bpm} bpm
                 </Text>
               </View>
               <View style={styles.rightsBadge}>
-                <Text style={styles.rightsBadgeText}>{selectedArrangement.licenseStatus}</Text>
+                <Text style={styles.rightsBadgeText} testID="license-status">
+                  {selectedArrangement.licenseStatus}
+                </Text>
               </View>
             </View>
 
@@ -305,23 +323,34 @@ export default function App() {
                 label={isPlaying ? 'Pause' : 'Play'}
                 onPress={() => setIsPlaying((current) => !current)}
                 primary
+                testID="play-toggle"
               />
               <ControlButton
                 icon="repeat"
                 label={loopEnabled ? 'Loop' : 'Free'}
                 onPress={() => setLoopEnabled((current) => !current)}
+                testID="loop-toggle"
               />
               <ControlButton
                 icon="timer-outline"
                 label={countInEnabled ? 'Count' : 'Now'}
                 onPress={() => setCountInEnabled((current) => !current)}
+                testID="count-in-toggle"
               />
               <View style={styles.tempoStepper}>
-                <Pressable onPress={() => setTempo((current) => Math.max(42, current - 4))} style={styles.tempoButton}>
+                <Pressable
+                  onPress={() => setTempo((current) => Math.max(42, current - 4))}
+                  style={styles.tempoButton}
+                  testID="tempo-down"
+                >
                   <Ionicons color="#18201C" name="remove" size={16} />
                 </Pressable>
-                <Text style={styles.tempoText}>{tempo}</Text>
-                <Pressable onPress={() => setTempo((current) => Math.min(180, current + 4))} style={styles.tempoButton}>
+                <Text style={styles.tempoText} testID="tempo-value">{tempo}</Text>
+                <Pressable
+                  onPress={() => setTempo((current) => Math.min(180, current + 4))}
+                  style={styles.tempoButton}
+                  testID="tempo-up"
+                >
                   <Ionicons color="#18201C" name="add" size={16} />
                 </Pressable>
               </View>
@@ -335,7 +364,13 @@ export default function App() {
               <Text style={styles.panelTitle}>Input</Text>
               <Text style={styles.panelMeta}>{inputMode === 'midi' ? 'tight timing' : 'room aware'}</Text>
             </View>
-            <SegmentedControl compact options={inputOptions} value={inputMode} onChange={setInputMode} />
+            <SegmentedControl
+              compact
+              options={inputOptions}
+              testIDPrefix="input"
+              value={inputMode}
+              onChange={setInputMode}
+            />
             <View style={styles.listenButtons}>
               <Pressable
                 disabled={!selectedArrangement}
@@ -345,6 +380,7 @@ export default function App() {
                   recorderState.isRecording && styles.recordingButton,
                   pressed && styles.pressed,
                 ]}
+                testID="run-practice-pass"
               >
                 <Ionicons
                   color="#F7F4EA"
@@ -360,7 +396,7 @@ export default function App() {
 
           <View style={styles.scorePanel}>
             <Text style={styles.scoreLabel}>Run score</Text>
-            <Text style={styles.scoreNumber}>{lastAttempt ? accuracy : '--'}</Text>
+            <Text style={styles.scoreNumber} testID="run-score">{lastAttempt ? accuracy : '--'}</Text>
             <View style={styles.scoreBars}>
               <ScoreBar label="Pitch" value={lastAttempt?.pitchScore ?? 0} color="#2E7D6E" />
               <ScoreBar label="Rhythm" value={lastAttempt?.rhythmScore ?? 0} color="#C84C31" />
@@ -371,14 +407,20 @@ export default function App() {
         <View style={styles.coachPanel}>
           <View style={styles.panelHeader}>
             <Text style={styles.panelTitle}>Coach</Text>
-            <SegmentedControl compact options={sassOptions} value={sassLevel} onChange={setSassLevel} />
+            <SegmentedControl
+              compact
+              options={sassOptions}
+              testIDPrefix="sass"
+              value={sassLevel}
+              onChange={setSassLevel}
+            />
           </View>
 
           <View style={styles.coachBubble}>
-            <Text style={styles.coachJab}>
+            <Text style={styles.coachJab} testID="coach-jab">
               {coachResponse?.jab ?? 'Play a pass. I am listening with judgment and a metronome.'}
             </Text>
-            <Text style={styles.coachAdvice}>
+            <Text style={styles.coachAdvice} testID="coach-advice">
               {coachResponse?.advice ??
                 'Your first target is clean attack, even spacing, and no heroic tempo choices before breakfast.'}
             </Text>
@@ -406,6 +448,9 @@ export default function App() {
             <Text style={styles.panelTitle}>Focus Areas</Text>
             <Text style={styles.panelMeta}>bar {activeMeasure}</Text>
           </View>
+          <Text style={styles.nativeMeta} testID="native-audio-status">
+            {nativeAudioStatus}
+          </Text>
           <View style={styles.measureGrid}>
             {(selectedArrangement?.measures ?? []).map((measure) => {
               const isHot = lastAttempt?.affectedMeasures.includes(measure.number);
@@ -420,6 +465,7 @@ export default function App() {
                     isActive && styles.measureCellActive,
                     isHot && styles.measureCellHot,
                   ]}
+                  testID={`focus-area-${measure.number}`}
                 >
                   <Text style={[styles.measureNumber, isActive && styles.measureNumberActive]}>
                     {measure.number}
@@ -442,9 +488,10 @@ type ControlButtonProps = {
   label: string;
   onPress: () => void;
   primary?: boolean;
+  testID?: string;
 };
 
-function ControlButton({ icon, label, onPress, primary = false }: ControlButtonProps) {
+function ControlButton({ icon, label, onPress, primary = false, testID }: ControlButtonProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -453,6 +500,7 @@ function ControlButton({ icon, label, onPress, primary = false }: ControlButtonP
         primary && styles.controlButtonPrimary,
         pressed && styles.pressed,
       ]}
+      testID={testID}
     >
       <Ionicons color={primary ? '#F7F4EA' : '#18201C'} name={icon} size={17} />
       <Text style={[styles.controlButtonText, primary && styles.controlButtonTextPrimary]}>
@@ -847,6 +895,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     marginTop: 5,
+  },
+  nativeMeta: {
+    color: '#68706B',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   pressed: {
     opacity: 0.74,

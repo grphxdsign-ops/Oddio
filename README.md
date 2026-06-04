@@ -14,6 +14,7 @@ Useful checks:
 ```bash
 npm.cmd run typecheck
 npm.cmd run smoke
+npx.cmd expo install --check
 ```
 
 ## Prototype Boundaries
@@ -37,3 +38,10 @@ npm.cmd run smoke
 2. Apply `supabase/schema.sql`.
 3. Add the values from `.env.example`.
 4. Keep service-role keys out of the app. Only use publishable or anon keys in Expo.
+
+## Native Testing And Swift
+
+- Detox UI testing is configured in `.detoxrc.js` and `e2e/`.
+- iOS Detox requires macOS and Xcode. Android Detox requires an emulator.
+- The local Swift Expo Module lives in `modules/oddio-audio-session`.
+- See `docs/TESTING.md` and `docs/IOS_SWIFT.md`.

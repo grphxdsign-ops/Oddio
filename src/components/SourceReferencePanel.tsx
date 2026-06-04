@@ -15,13 +15,15 @@ export function SourceReferencePanel({
   tempo,
 }: SourceReferencePanelProps) {
   return (
-    <View style={styles.panel}>
+    <View style={styles.panel} testID="source-reference-panel">
       <View style={styles.topRow}>
         <View style={styles.sourceMark}>
           <Ionicons color="#F7F4EA" name="open-outline" size={18} />
         </View>
         <View style={styles.copyBlock}>
-          <Text style={styles.title}>Reference on {arrangement.sourceName}</Text>
+          <Text style={styles.title} testID="source-reference-title">
+            Reference on {arrangement.sourceName}
+          </Text>
           <Text style={styles.body}>
             OddioAI links to the source for tab or sheet music. The app does not copy,
             re-host, or generate notation for this song.
@@ -38,6 +40,7 @@ export function SourceReferencePanel({
       <Pressable
         onPress={() => Linking.openURL(arrangement.externalUrl)}
         style={({ pressed }) => [styles.openButton, pressed && styles.pressed]}
+        testID="open-source-reference"
       >
         <Ionicons color="#F7F4EA" name="navigate-circle-outline" size={18} />
         <Text style={styles.openButtonText}>Open {arrangement.sourceName}</Text>

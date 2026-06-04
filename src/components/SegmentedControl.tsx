@@ -12,12 +12,14 @@ type SegmentedControlProps<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   compact?: boolean;
+  testIDPrefix?: string;
 };
 
 export function SegmentedControl<T extends string>({
   compact = false,
   onChange,
   options,
+  testIDPrefix,
   value,
 }: SegmentedControlProps<T>) {
   return (
@@ -35,6 +37,7 @@ export function SegmentedControl<T extends string>({
               active && styles.optionActive,
               pressed && styles.pressed,
             ]}
+            testID={testIDPrefix ? `${testIDPrefix}-${option.value}` : undefined}
           >
             {option.icon ? (
               <Ionicons color={active ? '#F7F4EA' : '#425049'} name={option.icon} size={compact ? 14 : 17} />

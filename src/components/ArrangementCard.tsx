@@ -26,6 +26,7 @@ export function ArrangementCard({ arrangement, isSelected, onPress }: Arrangemen
         isSelected && styles.cardActive,
         pressed && styles.pressed,
       ]}
+      testID={`arrangement-card-${arrangement.id}`}
     >
       <View style={styles.topRow}>
         <View style={[styles.iconWrap, isSelected && styles.iconWrapActive]}>
