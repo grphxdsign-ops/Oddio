@@ -132,6 +132,10 @@ create policy "users can insert own voice turns"
   on public.voice_turns for insert
   with check (auth.uid() = user_id);
 
+create policy "users can delete own voice turns"
+  on public.voice_turns for delete
+  using (auth.uid() = user_id);
+
 create policy "users can manage own progress"
   on public.progress_events for all
   using (auth.uid() = user_id)

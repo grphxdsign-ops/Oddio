@@ -127,69 +127,9 @@ export type TutorResponse = {
   toneSafety: 'supportive-tease';
 };
 
-export type VoiceTurnStatus =
-  | 'idle'
-  | 'recording'
-  | 'uploading'
-  | 'thinking'
-  | 'speaking'
-  | 'error';
-
-export type VoiceTurnContext = {
-  conversationId: string;
-  learner: LearnerProfile;
-  arrangement: Pick<
-    Arrangement,
-    | 'id'
-    | 'title'
-    | 'artist'
-    | 'instrument'
-    | 'bpm'
-    | 'key'
-    | 'sourceName'
-    | 'licenseStatus'
-    | 'referenceOnly'
-  >;
-  instrument: Instrument;
-  sassLevel: SassLevel;
-  activeMeasure: number;
-  currentAttempt: Pick<
-    PerformanceAttempt,
-    | 'inputType'
-    | 'timingOffsets'
-    | 'missedNotes'
-    | 'wrongNotes'
-    | 'rhythmScore'
-    | 'pitchScore'
-    | 'confidence'
-    | 'affectedMeasures'
-    | 'recommendedDrills'
-    | 'rawAudioRetainedLocally'
-  > | null;
-  recentProgress: Array<
-    Pick<
-      PerformanceAttempt,
-      | 'inputType'
-      | 'rhythmScore'
-      | 'pitchScore'
-      | 'confidence'
-      | 'affectedMeasures'
-      | 'recommendedDrills'
-      | 'createdAt'
-    >
-  >;
-};
-
-export type VoiceTurnResponse = {
-  id: string;
-  conversationId: string;
-  transcript: string;
-  assistantText: string;
-  audioUrl: string | null;
-  audioExpiresAt: string | null;
-  rawUserAudioRetained: false;
-  source: 'mock' | 'ai';
-  createdAt: string;
-};
-
-export type VoiceConversationTurn = VoiceTurnResponse;
+export type {
+  VoiceConversationTurn,
+  VoiceTurnContext,
+  VoiceTurnResponse,
+  VoiceTurnStatus,
+} from '../../supabase/functions/_shared/voiceTypes';

@@ -6,7 +6,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   buildVoiceTurnContext,
@@ -57,6 +57,7 @@ export function useVoiceCoach({
   const [lastTurn, setLastTurn] = useState<VoiceConversationTurn | null>(null);
   const [muted, setMuted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const voiceTurnBusyRef = useRef(false);
 
   const voiceRecorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
   const voiceRecorderState = useAudioRecorderState(voiceRecorder);
@@ -115,10 +116,18 @@ export function useVoiceCoach({
   );
 
   const startVoiceTurn = useCallback(async () => {
-    if (!context || status === 'recording') {
+    if (
+      !context ||
+      voiceTurnBusyRef.current ||
+      status === 'recording' ||
+      status === 'uploading' ||
+      status === 'thinking' ||
+      status === 'speaking'
+    ) {
       return;
     }
 
+    voiceTurnBusyRef.current = true;
     setErrorMessage(null);
 
     try {
@@ -140,7 +149,7 @@ export function useVoiceCoach({
       setStatus(nextVoiceTurnStatus('idle', 'start_recording'));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Voice recording could not start.');
-      setStatus(nextVoiceTurnStatus(status, 'fail'));
+      setStatus(nextVoiceTurnStatus('recording', 'fail'));
     }
   }, [
     context,
@@ -150,6 +159,12 @@ export function useVoiceCoach({
     status,
     voiceRecorder,
   ]);
+
+  useEffect(() => {
+    if (status === 'idle' || status === 'error') {
+      voiceTurnBusyRef.current = false;
+    }
+  }, [status]);
 
   const finishVoiceTurn = useCallback(async () => {
     if (!context || status !== 'recording') {

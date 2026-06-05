@@ -1,65 +1,13 @@
+import type {
+  VoiceTurnContext as VoiceTurnFunctionContext,
+  VoiceTurnResponse as VoiceTurnFunctionResponse,
+} from '../_shared/voiceTypes.ts';
+
 export const MAX_AUDIO_BYTES = 8 * 1024 * 1024;
 export const DEFAULT_STT_MODEL = 'gpt-4o-mini-transcribe';
 export const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
 export const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
 export const DEFAULT_TTS_VOICE = 'coral';
-
-export type VoiceTurnFunctionContext = {
-  activeMeasure: number;
-  arrangement: {
-    artist: string;
-    bpm: number;
-    id: string;
-    instrument: 'guitar' | 'piano';
-    key: string;
-    licenseStatus: string;
-    referenceOnly: boolean;
-    sourceName: string;
-    title: string;
-  };
-  conversationId: string;
-  currentAttempt: {
-    affectedMeasures: number[];
-    confidence: number;
-    inputType: 'mic' | 'midi';
-    missedNotes: string[];
-    pitchScore: number;
-    rawAudioRetainedLocally: boolean;
-    recommendedDrills: string[];
-    rhythmScore: number;
-    timingOffsets: number[];
-    wrongNotes: string[];
-  } | null;
-  instrument: 'guitar' | 'piano';
-  learner: {
-    displayName: string;
-    id: string;
-    practiceStreak: number;
-    targetLevel: string;
-  };
-  recentProgress: Array<{
-    affectedMeasures: number[];
-    confidence: number;
-    createdAt: string;
-    inputType: 'mic' | 'midi';
-    pitchScore: number;
-    recommendedDrills: string[];
-    rhythmScore: number;
-  }>;
-  sassLevel: 'light' | 'balanced' | 'savage';
-};
-
-export type VoiceTurnFunctionResponse = {
-  id: string;
-  conversationId: string;
-  transcript: string;
-  assistantText: string;
-  audioUrl: string | null;
-  audioExpiresAt: string | null;
-  rawUserAudioRetained: false;
-  source: 'mock' | 'ai';
-  createdAt: string;
-};
 
 type ValidationResult =
   | {
@@ -81,12 +29,8 @@ export function validateVoiceTurnRequest(args: {
     return { message: 'Voice turns require an authenticated Supabase session.', ok: false, status: 401 };
   }
 
-  if (args.audioSize === null) {
+  if (args.audioSize === null || args.audioSize <= 0) {
     return { message: 'Voice turns require an audio file.', ok: false, status: 400 };
-  }
-
-  if (args.audioSize <= 0) {
-    return { message: 'Voice question audio is empty.', ok: false, status: 400 };
   }
 
   if (args.audioSize > MAX_AUDIO_BYTES) {
