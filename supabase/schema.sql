@@ -165,3 +165,7 @@ create policy "users update own arrangement files"
 create policy "users read own voice replies"
   on storage.objects for select
   using (bucket_id = 'voice-replies' and auth.uid()::text = (storage.foldername(name))[1]);
+
+create policy "users delete own voice replies"
+  on storage.objects for delete
+  using (bucket_id = 'voice-replies' and auth.uid()::text = (storage.foldername(name))[1]);

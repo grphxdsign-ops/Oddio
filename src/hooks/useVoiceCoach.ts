@@ -149,7 +149,7 @@ export function useVoiceCoach({
       setStatus(nextVoiceTurnStatus('idle', 'start_recording'));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Voice recording could not start.');
-      setStatus(nextVoiceTurnStatus('recording', 'fail'));
+      setStatus(nextVoiceTurnStatus(status, 'fail'));
     }
   }, [
     context,
