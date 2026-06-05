@@ -92,7 +92,12 @@ Deno.serve(async (request) => {
       .single();
 
     if (insertError) {
-      return jsonResponse({ error: insertError.message }, 500);
+      console.error('voice_turns insert failed', {
+        code: insertError.code,
+        message: insertError.message,
+      });
+
+      return jsonResponse({ error: 'Voice turn could not be saved. Please try again.' }, 500);
     }
 
     return jsonResponse({
@@ -221,7 +226,7 @@ async function storeReplyAudio({
     });
 
   if (uploadError) {
-    throw new Error(uploadError.message);
+    throwSupabaseFailure('Voice reply upload', uploadError);
   }
 
   const signedSeconds = 10 * 60;
@@ -230,7 +235,7 @@ async function storeReplyAudio({
     .createSignedUrl(audioObjectPath, signedSeconds);
 
   if (error || !data?.signedUrl) {
-    throw new Error(error?.message ?? 'Could not create voice reply URL.');
+    throwSupabaseFailure('Voice reply signed URL', error);
   }
 
   return {
@@ -238,6 +243,18 @@ async function storeReplyAudio({
     audioObjectPath,
     audioUrl: data.signedUrl,
   };
+}
+
+function throwSupabaseFailure(
+  stage: string,
+  error: { code?: string; message?: string } | null,
+): never {
+  console.error(`${stage} failed`, {
+    code: error?.code,
+    message: error?.message,
+  });
+
+  throw new Error(`${stage} failed. Please try another voice turn in a moment.`);
 }
 
 function createSupabaseAdminClient() {
