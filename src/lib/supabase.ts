@@ -57,6 +57,58 @@ type VoiceTurnInsert = Omit<VoiceTurnRow, 'id' | 'created_at'> & {
   created_at?: string;
 };
 
+type UploadRow = {
+  id: string;
+  user_id: string;
+  arrangement_id: string | null;
+  file_path: string;
+  file_name: string;
+  mime_type: string | null;
+  rights_confirmed: boolean;
+  created_at: string;
+};
+
+type UploadInsert = Omit<UploadRow, 'id' | 'created_at' | 'rights_confirmed'> & {
+  id?: string;
+  rights_confirmed?: boolean;
+  created_at?: string;
+};
+
+type PerformanceAttemptRow = {
+  id: string;
+  user_id: string;
+  arrangement_id: string | null;
+  instrument: Instrument;
+  input_type: InputMode;
+  attempt_summary: Record<string, unknown>;
+  raw_audio_retained_locally: boolean;
+  created_at: string;
+};
+
+type PerformanceAttemptInsert = Omit<
+  PerformanceAttemptRow,
+  'id' | 'created_at' | 'raw_audio_retained_locally'
+> & {
+  id?: string;
+  raw_audio_retained_locally?: boolean;
+  created_at?: string;
+};
+
+type ProgressEventRow = {
+  id: string;
+  user_id: string;
+  arrangement_id: string | null;
+  event_type: string;
+  event_payload: Record<string, unknown>;
+  created_at: string;
+};
+
+type ProgressEventInsert = Omit<ProgressEventRow, 'id' | 'created_at' | 'event_payload'> & {
+  id?: string;
+  event_payload?: Record<string, unknown>;
+  created_at?: string;
+};
+
 type ExpoEnv = {
   process?: {
     env?: Record<string, string | undefined>;
@@ -92,24 +144,25 @@ export type Database = {
         Insert: ArrangementInsert;
         Update: Partial<ArrangementInsert>;
       };
+      uploads: {
+        Row: UploadRow;
+        Insert: UploadInsert;
+        Update: Partial<UploadInsert>;
+      };
       performance_attempts: {
-        Row: {
-          id: string;
-          user_id: string;
-          arrangement_id: string;
-          instrument: Instrument;
-          input_type: InputMode;
-          attempt_summary: Record<string, unknown>;
-          raw_audio_retained_locally: boolean;
-          created_at: string;
-        };
-        Insert: Database['public']['Tables']['performance_attempts']['Row'];
-        Update: Partial<Database['public']['Tables']['performance_attempts']['Insert']>;
+        Row: PerformanceAttemptRow;
+        Insert: PerformanceAttemptInsert;
+        Update: Partial<PerformanceAttemptInsert>;
       };
       voice_turns: {
         Row: VoiceTurnRow;
         Insert: VoiceTurnInsert;
         Update: Partial<VoiceTurnInsert>;
+      };
+      progress_events: {
+        Row: ProgressEventRow;
+        Insert: ProgressEventInsert;
+        Update: Partial<ProgressEventInsert>;
       };
     };
     Views: Record<string, never>;
