@@ -137,6 +137,16 @@ async function main() {
     assert.equal(missingAudioVoiceTurn.status, 400);
   }
 
+  const emptyAudioVoiceTurn = validateVoiceTurnRequest({
+    audioSize: 0,
+    authorization: 'Bearer test',
+    contextRaw: JSON.stringify(voiceContext),
+  });
+  assert.equal(emptyAudioVoiceTurn.ok, false, 'edge function should reject empty audio');
+  if (!emptyAudioVoiceTurn.ok) {
+    assert.equal(emptyAudioVoiceTurn.status, 400);
+  }
+
   const oversizedVoiceTurn = validateVoiceTurnRequest({
     audioSize: MAX_AUDIO_BYTES + 1,
     authorization: 'Bearer test',
@@ -146,6 +156,18 @@ async function main() {
   if (!oversizedVoiceTurn.ok) {
     assert.equal(oversizedVoiceTurn.status, 413);
   }
+
+  const mismatchedInstrumentVoiceTurn = validateVoiceTurnRequest({
+    audioSize: 1024,
+    authorization: 'Bearer test',
+    contextRaw: JSON.stringify({ ...voiceContext, instrument: 'piano' }),
+  });
+  assert.equal(
+    mismatchedInstrumentVoiceTurn.ok,
+    false,
+    'edge function should reject mismatched instrument context',
+  );
+
   const edgeTurn = buildMockEdgeVoiceTurn(voiceContext);
   assert.equal(edgeTurn.rawUserAudioRetained, false, 'edge mock should preserve no raw voice storage policy');
   assert.equal(edgeTurn.assistantText.length > 30, true, 'edge mock should produce coach text');

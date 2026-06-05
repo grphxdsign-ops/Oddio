@@ -85,6 +85,10 @@ export function validateVoiceTurnRequest(args: {
     return { message: 'Voice turns require an audio file.', ok: false, status: 400 };
   }
 
+  if (args.audioSize <= 0) {
+    return { message: 'Voice question audio is empty.', ok: false, status: 400 };
+  }
+
   if (args.audioSize > MAX_AUDIO_BYTES) {
     return { message: 'Voice question is too large. Keep it under 8 MB.', ok: false, status: 413 };
   }
@@ -97,6 +101,18 @@ export function validateVoiceTurnRequest(args: {
     const context = JSON.parse(args.contextRaw) as VoiceTurnFunctionContext;
     if (!context.arrangement?.id || !context.instrument || !context.sassLevel) {
       return { message: 'Voice turn context is missing required practice fields.', ok: false, status: 400 };
+    }
+
+    if (!['guitar', 'piano'].includes(context.instrument)) {
+      return { message: 'Voice turn instrument is not supported yet.', ok: false, status: 400 };
+    }
+
+    if (context.arrangement.instrument !== context.instrument) {
+      return { message: 'Voice turn instrument does not match the arrangement.', ok: false, status: 400 };
+    }
+
+    if (!['light', 'balanced', 'savage'].includes(context.sassLevel)) {
+      return { message: 'Voice turn sass level is invalid.', ok: false, status: 400 };
     }
 
     return { context, ok: true };
