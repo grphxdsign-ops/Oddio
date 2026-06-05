@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import type { VoiceTurnContext } from '../_shared/voiceTypes.ts';
 
 import {
   DEFAULT_LLM_MODEL,
@@ -131,14 +131,14 @@ async function transcribeVoice(openAiKey: string, audio: File) {
   });
 
   if (!response.ok) {
-    throw new Error(`Transcription failed: ${await response.text()}`);
+    await throwOpenAiFailure('Voice transcription', response);
   }
 
   const payload = await response.json();
   return String(payload.text ?? '').trim() || 'What should I practice next?';
 }
 
-async function generateCoachText(openAiKey: string, context, transcript: string) {
+async function generateCoachText(openAiKey: string, context: VoiceTurnContext, transcript: string) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     body: JSON.stringify({
       max_tokens: 160,
@@ -163,7 +163,7 @@ async function generateCoachText(openAiKey: string, context, transcript: string)
   });
 
   if (!response.ok) {
-    throw new Error(`Coach response failed: ${await response.text()}`);
+    await throwOpenAiFailure('Coach response generation', response);
   }
 
   const payload = await response.json();
@@ -187,10 +187,20 @@ async function synthesizeVoice(openAiKey: string, assistantText: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Voice generation failed: ${await response.text()}`);
+    await throwOpenAiFailure('Voice synthesis', response);
   }
 
   return new Uint8Array(await response.arrayBuffer());
+}
+
+async function throwOpenAiFailure(stage: string, response: Response): Promise<never> {
+  const providerBody = await response.text();
+  console.error(`${stage} failed`, {
+    body: providerBody,
+    status: response.status,
+  });
+
+  throw new Error(`${stage} failed. Please try another voice turn in a moment.`);
 }
 
 async function storeReplyAudio({

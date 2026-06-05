@@ -171,16 +171,20 @@ export function useVoiceCoach({
       return;
     }
 
+    let failureStatus: VoiceTurnStatus = 'recording';
+
     try {
       let recordingUri: string | null = null;
-      setStatus(nextVoiceTurnStatus('recording', 'audio_captured'));
+      failureStatus = nextVoiceTurnStatus('recording', 'audio_captured');
+      setStatus(failureStatus);
 
       if (!mockVoiceEnabled) {
         await voiceRecorder.stop();
         recordingUri = voiceRecorder.uri;
       }
 
-      setStatus(nextVoiceTurnStatus('uploading', 'request_sent'));
+      failureStatus = nextVoiceTurnStatus('uploading', 'request_sent');
+      setStatus(failureStatus);
       const turn = await submitVoiceTurn({
         context,
         inputMode,
@@ -191,7 +195,7 @@ export function useVoiceCoach({
       await playTurn(turn);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Oddio voice coach missed the cue.');
-      setStatus(nextVoiceTurnStatus('thinking', 'fail'));
+      setStatus(nextVoiceTurnStatus(failureStatus, 'fail'));
     }
   }, [context, inputMode, mockVoiceEnabled, playTurn, status, voiceRecorder]);
 
