@@ -33,6 +33,7 @@ expo-web*.log
 
 # local env files
 .env*.local
+supabase/functions/.env
 
 # typescript
 *.tsbuildinfo

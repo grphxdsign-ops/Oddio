@@ -50,6 +50,11 @@ The first test suite verifies:
 - MIDI practice mode can run a simulated pass.
 - Coach feedback remains visible after a practice pass.
 - Piano search creates external source-search cards instead of generated notation.
+- Push-to-talk voice coach shows the AI disclosure, mock transcript, coach response, and replay control.
+- Voice recording is disabled while a practice mic pass is actively recording.
+- Mock voice backend failures render an error state without crashing the practice UI.
+
+Voice tests use the deterministic mock lane unless Supabase and OpenAI voice secrets are configured. See `docs/VOICE.md`.
 
 ## Review Gates
 

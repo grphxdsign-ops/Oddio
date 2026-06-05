@@ -57,6 +57,21 @@ create table public.performance_attempts (
   created_at timestamptz not null default now()
 );
 
+create table public.voice_turns (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  arrangement_id uuid references public.arrangements(id) on delete set null,
+  instrument public.instrument not null,
+  sass_level public.sass_level not null,
+  user_transcript text not null,
+  assistant_text text not null,
+  context_summary jsonb not null default '{}'::jsonb,
+  audio_object_path text,
+  audio_expires_at timestamptz,
+  raw_user_audio_retained boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 create table public.progress_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -70,6 +85,7 @@ alter table public.profiles enable row level security;
 alter table public.arrangements enable row level security;
 alter table public.uploads enable row level security;
 alter table public.performance_attempts enable row level security;
+alter table public.voice_turns enable row level security;
 alter table public.progress_events enable row level security;
 
 create policy "profiles are self readable"
@@ -108,6 +124,14 @@ create policy "users can manage own attempts"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+create policy "users can read own voice turns"
+  on public.voice_turns for select
+  using (auth.uid() = user_id);
+
+create policy "users can insert own voice turns"
+  on public.voice_turns for insert
+  with check (auth.uid() = user_id);
+
 create policy "users can manage own progress"
   on public.progress_events for all
   using (auth.uid() = user_id)
@@ -115,6 +139,10 @@ create policy "users can manage own progress"
 
 insert into storage.buckets (id, name, public)
 values ('user-arrangements', 'user-arrangements', false)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+values ('voice-replies', 'voice-replies', false)
 on conflict (id) do nothing;
 
 create policy "users read own arrangement files"
@@ -129,3 +157,7 @@ create policy "users update own arrangement files"
   on storage.objects for update
   using (bucket_id = 'user-arrangements' and auth.uid()::text = (storage.foldername(name))[1])
   with check (bucket_id = 'user-arrangements' and auth.uid()::text = (storage.foldername(name))[1]);
+
+create policy "users read own voice replies"
+  on storage.objects for select
+  using (bucket_id = 'voice-replies' and auth.uid()::text = (storage.foldername(name))[1]);

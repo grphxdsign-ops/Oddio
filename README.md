@@ -21,6 +21,7 @@ npx.cmd expo install --check
 
 - The app links to source references such as Songsterr, Musicnotes, and IMSLP. It does not copy, re-host, or generate sheet music or tablature.
 - Microphone recording uses Expo Audio and keeps raw audio local. The current scoring engine is deterministic simulation so the UI and data contracts are testable before native DSP is added.
+- Push-to-talk voice coaching uses mock mode locally unless Supabase and OpenAI voice secrets are configured. Raw voice questions are not stored by default.
 - MIDI mode is adapter-ready and simulated in this prototype. A dev-build native MIDI bridge should replace it for hardware keyboards.
 - If an in-app catalog match is missing, OddioAI creates source-search cards instead of composing its own notation.
 
@@ -38,6 +39,7 @@ npx.cmd expo install --check
 2. Apply `supabase/schema.sql`.
 3. Add the values from `.env.example`.
 4. Keep service-role keys out of the app. Only use publishable or anon keys in Expo.
+5. See `docs/VOICE.md` for voice coach secrets, Edge Function deployment, and mock mode.
 
 ## Native Testing And Swift
 

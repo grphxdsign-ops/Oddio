@@ -7,8 +7,8 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import {
   Alert,
   Linking,
@@ -23,6 +23,9 @@ import {
 import { ArrangementCard } from './src/components/ArrangementCard';
 import { SegmentedControl } from './src/components/SegmentedControl';
 import { SourceReferencePanel } from './src/components/SourceReferencePanel';
+import { VoiceCoachPanel } from './src/components/VoiceCoachPanel';
+import { useVoiceCoach } from './src/hooks/useVoiceCoach';
+import { ensureAnonymousSession, isSupabaseConfigured } from './src/lib/supabase';
 import {
   buildExternalReferenceSearches,
   searchArrangements,
@@ -79,9 +82,37 @@ export default function App() {
   const [recentProgress, setRecentProgress] = useState<PerformanceAttempt[]>([]);
   const [micReady, setMicReady] = useState(false);
   const [nativeAudioStatus, setNativeAudioStatus] = useState('JS fallback');
+  const [voiceAuthStatus, setVoiceAuthStatus] = useState(
+    isSupabaseConfigured ? 'Voice auth pending' : 'Voice mock ready',
+  );
 
   const recorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
+
+  const stopPracticeRecordingForVoice = useCallback(async () => {
+    if (recorderState.isRecording) {
+      await recorder.stop();
+    }
+  }, [recorder, recorderState.isRecording]);
+
+  const voiceCoach = useVoiceCoach({
+    activeMeasure,
+    arrangement: selectedArrangement,
+    attempt: lastAttempt,
+    inputMode,
+    instrument,
+    learner: learnerProfile,
+    micReady,
+    onBeforeVoiceRecording: stopPracticeRecordingForVoice,
+    recentProgress,
+    sassLevel,
+  });
+
+  const voiceBusy =
+    voiceCoach.status === 'recording' ||
+    voiceCoach.status === 'uploading' ||
+    voiceCoach.status === 'thinking' ||
+    voiceCoach.status === 'speaking';
 
   useEffect(() => {
     let isMounted = true;
@@ -113,6 +144,33 @@ export default function App() {
     };
 
     prepareMic();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const prepareVoiceAuth = async () => {
+      if (!isSupabaseConfigured) {
+        return;
+      }
+
+      try {
+        const session = await ensureAnonymousSession();
+        if (isMounted) {
+          setVoiceAuthStatus(session ? 'Voice auth ready' : 'Voice auth unavailable');
+        }
+      } catch {
+        if (isMounted) {
+          setVoiceAuthStatus('Voice auth unavailable');
+        }
+      }
+    };
+
+    prepareVoiceAuth();
 
     return () => {
       isMounted = false;
@@ -226,6 +284,10 @@ export default function App() {
         return;
       }
 
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+      });
       await recorder.prepareToRecordAsync();
       await recorder.record();
     } catch {
@@ -238,9 +300,14 @@ export default function App() {
     : 0;
 
   return (
-    <SafeAreaView style={styles.safeArea} testID="oddio-root">
-      <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea} testID="oddio-root">
+        <StatusBar style="dark" />
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          testID="oddio-scroll"
+        >
         <View style={styles.header}>
           <View>
             <Text style={styles.brand} testID="brand-title">OddioAI</Text>
@@ -386,11 +453,13 @@ export default function App() {
             />
             <View style={styles.listenButtons}>
               <Pressable
-                disabled={!selectedArrangement}
+                accessibilityState={{ disabled: !selectedArrangement || voiceBusy }}
+                disabled={!selectedArrangement || voiceBusy}
                 onPress={inputMode === 'mic' ? handleRecordToggle : () => runAnalysis('midi')}
                 style={({ pressed }) => [
                   styles.listenButton,
                   recorderState.isRecording && styles.recordingButton,
+                  voiceBusy && styles.listenButtonDisabled,
                   pressed && styles.pressed,
                 ]}
                 testID="run-practice-pass"
@@ -456,13 +525,28 @@ export default function App() {
           ) : null}
         </View>
 
+        <VoiceCoachPanel
+          disabled={!selectedArrangement}
+          errorMessage={voiceCoach.errorMessage}
+          lastTurn={voiceCoach.lastTurn}
+          mockVoiceEnabled={voiceCoach.mockVoiceEnabled}
+          muted={voiceCoach.muted}
+          onFinish={voiceCoach.finishVoiceTurn}
+          onMuteToggle={voiceCoach.toggleMute}
+          onReplay={voiceCoach.replayVoice}
+          onStart={voiceCoach.startVoiceTurn}
+          onStop={voiceCoach.stopVoice}
+          practiceRecording={recorderState.isRecording}
+          status={voiceCoach.status}
+        />
+
         <View style={styles.timelinePanel}>
           <View style={styles.panelHeader}>
             <Text style={styles.panelTitle}>Focus Areas</Text>
             <Text style={styles.panelMeta}>bar {activeMeasure}</Text>
           </View>
           <Text style={styles.nativeMeta} testID="native-audio-status">
-            {nativeAudioStatus}
+            {nativeAudioStatus} / {voiceAuthStatus}
           </Text>
           <View style={styles.measureGrid}>
             {(selectedArrangement?.measures ?? []).map((measure) => {
@@ -491,8 +575,9 @@ export default function App() {
             })}
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
@@ -767,6 +852,9 @@ const styles = StyleSheet.create({
   },
   recordingButton: {
     backgroundColor: '#C84C31',
+  },
+  listenButtonDisabled: {
+    backgroundColor: '#87918B',
   },
   listenButtonText: {
     color: '#F7F4EA',
